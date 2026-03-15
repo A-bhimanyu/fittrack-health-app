@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FitTrack</title>
+    <style>
+      :root {
+        --bg1: #f6fbff;
+        --card: #ffffff;
+        --accent: #2a6e69;
+        --accent-2: #4adede;
+        --muted: #6b7280;
+        --good: #16a34a;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+        --radius: 12px;
+        --glass-size: 62px;
+        --bg-color: #000;
+        --snd-bg-color: #111;
+        --text-color: #fff;
+        --main-color: #5ad649;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+        background: linear-gradient(135deg, var(--bg-color));
+        color: var(--bg-color);
+        padding: 24px;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 20px;
+        align-items: start;
+      }
+      header {
+        grid-column: 1/-1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+        color: var(--main-color);
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: 0 6px 18px rgba(10, 20, 28, 0.06);
+      }
+
+      /* Left column: big vertical stack */
+      .left {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* BMI / Profile form */
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e6eef0;
+        font-size: 14px;
+      }
+      .btn {
+        background: var(--accent);
+        color: white;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      /* Stats area */
+      .stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .stat {
+        flex: 1 1 150px;
+        background: linear-gradient(180deg, #ffffff, #fbfffe);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #f0f7f6;
+      }
+      .stat h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .stat p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* Right column: water + food */
+      .right {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Water tracker */
+      .glasses {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        justify-items: center;
+      }
+      .glass {
+        width: var(--glass-size);
+        height: 88px;
+        border-radius: 10px;
+        border: 2px solid var(--accent);
+        background: linear-gradient(180deg, #eafaf9, #e6fbfb);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.25s ease;
+      }
+      .glass.full {
+        background: linear-gradient(180deg, var(--accent-2), #1fc9c9);
+        color: rgb(3, 3, 3);
+        transform: translateY(-4px);
+      }
+      .glass span {
+        position: absolute;
+        top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .progress {
+        width: 100%;
+        height: 14px;
+        background: #eef6f6;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 12px;
+        border: 1px solid #e6f2f2;
+      }
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent-2), var(--accent));
+        transition: width 0.3s ease;
+      }
+
+      /* Food list */
+      .food-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      select,
+      input[type="number"] {
+        font-size: 14px;
+      }
+      .food-list {
+        max-height: 220px;
+        overflow: auto;
+        padding: 8px 0;
+      }
+      .food-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        border-radius: 8px;
+        background: #fbfffe;
+        border: 1px solid #f0fbf9;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .food-item button {
+        background: transparent;
+        border: none;
+        color: var(--bad);
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .totals {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        gap: 6px;
+      }
+      .remaining {
+        font-weight: 700;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      footer {
+        grid-column: 1/-1;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      /* Responsive */
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+          padding: 8px;
+        }
+        .right {
+          order: 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <p>BMI · Water Intake · Food Calorie Counter (integrated)</p>
+        </div>
+        <div>
+          <small>Tip: fill profile and click <strong>Compute</strong></small>
+        </div>
+      </header>
+
+      <!-- LEFT: Controls + Outputs -->
+      <div class="left">
+        <!-- PROFILE / BMI -->
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div><strong>Profile & BMI</strong></div>
+            <div style="font-size: 13px; color: var(--muted)">
+              Calculate daily calorie need
+            </div>
+          </div>
+
+          <div style="height: 10px"></div>
+
+          <div class="profile-grid">
+            <div>
+              <label>Age</label>
+              <input id="age" type="number" min="5" max="120" value="20" />
+            </div>
+            <div>
+              <label>Gender</label>
+              <select id="gender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+            <div>
+              <label>Height (cm)</label>
+              <input id="height" type="number" min="80" max="260" value="170" />
+            </div>
+            <div>
+              <label>Weight (kg)</label>
+              <input id="weight" type="number" min="20" max="300" value="65" />
+            </div>
+          </div>
+
+          <div style="height: 10px"></div>
+
+          <div
+            class="profile-grid"
+            style="grid-template-columns: repeat(3, 1fr)"
+          >
+            <div>
+              <label>Activity level</label>
+              <select id="activity">
+                <option value="1.2">Sedentary (little or no exercise)</option>
+                <option value="1.375">Light (1-3 days/week)</option>
+                <option value="1.55" selected>Moderate (3-5 days/week)</option>
+                <option value="1.725">Active (6-7 days/week)</option>
+                <option value="1.9">Very active (hard daily exercise)</option>
+              </select>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="computeBtn" class="btn" style="width: 100%">
+                Compute
+              </button>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="resetProfile" class="btn" style="background: #ef4444">
+                Reset Day
+              </button>
+            </div>
+          </div>
+
+          <div class="stats" style="margin-top: 12px">
+            <div class="stat">
+              <h3 id="bmiVal">—</h3>
+              <p id="bmiLabel">BMI</p>
+            </div>
+            <div class="stat">
+              <h3 id="bmrVal">—</h3>
+              <p>BMR (kcal/day)</p>
+            </div>
+            <div class="stat">
+              <h3 id="tdeeVal">—</h3>
+              <p>Recommended (kcal/day)</p>
+            </div>
+            <div class="stat">
+              <h3 id="consumedVal">0</h3>
+              <p>Consumed (kcal)</p>
+            </div>
+          </div>
+
+          <div class="note" id="profileNote">
+            Fill the fields and press <strong>Compute</strong>. Recommended
+            calories come from BMR × activity, then adjusted by BMI.
+          </div>
+        </div>
+
+        <!-- INFO / MESSAGES -->
+        <div class="card">
+          <strong>Quick Messages</strong>
+          <div style="height: 10px"></div>
+          <div id="messages" style="min-height: 48px; color: var(--muted)">
+            Welcome — keep your profile updated and add foods/water to track
+            your day.
+          </div>
+        </div>
+
+        <!-- OPTIONAL: History / Storage explanation -->
+        <div class="card">
+          <strong>Storage & Reset</strong>
+          <div style="height: 8px"></div>
+          <div class="note">
+            This page stores your today's water & food entries locally in the
+            browser. Click <strong>Reset Day</strong> to clear today's data.
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Water + Food panels -->
+      <div class="right">
+        <!-- WATER TRACKER -->
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div><strong>Water Intake</strong></div>
+            <div style="font-size: 13px; color: var(--muted)" id="waterStatus">
+              0 / 8
+            </div>
+          </div>
+
+          <div class="glasses" id="glasses"></div>
+
+          <div class="progress">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-top: 10px;
+              gap: 8px;
+            "
+          >
+            <button id="addGlass" class="btn" style="flex: 1">Add Glass</button>
+            <button id="clearWater" class="btn" style="background: #ef4444">
+              Clear
+            </button>
+          </div>
+          <div class="note" style="margin-top: 8px">
+            Each glass is ~250ml by default. Tap any glass to toggle it.
+          </div>
+        </div>
+
+        <!-- FOOD / CALORIE TRACKER -->
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div><strong>Food Calorie Counter</strong></div>
+            <div style="font-size: 13px; color: var(--muted)">
+              Remaining: <span id="remainingVal">—</span> kcal
+            </div>
+          </div>
+
+          <div style="height: 8px"></div>
+
+          <div class="food-row">
+            <select id="foodSelect" style="flex: 2">
+              <option value="">-- Select food (db) --</option>
+            </select>
+            <input
+              id="qty"
+              type="number"
+              min="1"
+              value="1"
+              style="width: 80px"
+              title="Quantity"
+            />
+            <button id="addFoodBtn" class="btn" style="flex: 0 0 92px">
+              Add
+            </button>
+          </div>
+
+          <div
+            class="food-list card"
+            id="foodListContainer"
+            style="
+              padding: 10px;
+              border-radius: 10px;
+              box-shadow: none;
+              border: 1px solid #f0fbf9;
+            "
+          >
+            <div id="foodList"></div>
+          </div>
+
+          <div class="totals" style="margin-top: 8px">
+            <div>Total: <strong id="totalCal">0</strong> kcal</div>
+            <div>
+              <button id="clearFood" class="btn" style="background: #ef4444">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="note">
+            Food DB is built-in. Choose servings and press Add. Remove items
+            with the ❌.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /***************
+       * Utilities
+       ***************/
+      function $(id) {
+        return document.getElementById(id);
+      }
+      function fmt(n) {
+        return Math.round(n);
+      }
+
+      /***************
+       * Food Database
+       * calories are per-serving. You can expand this list.
+       ***************/
+      const foodDB = [
+        { name: "Apple (1 medium)", cal: 95 },
+        { name: "Banana (1 medium)", cal: 105 },
+        { name: "Boiled Egg (1)", cal: 78 },
+        { name: "Bread (1 slice)", cal: 80 },
+        { name: "Rice (1 cup cooked)", cal: 206 },
+        { name: "Chapati (1)", cal: 120 },
+        { name: "Chicken Breast (100g)", cal: 165 },
+        { name: "Paneer (100g)", cal: 265 },
+        { name: "Milk (1 glass)", cal: 150 },
+        { name: "Omelette (1)", cal: 154 },
+        { name: "Salad Bowl", cal: 60 },
+        { name: "Pasta (1 cup)", cal: 220 },
+        { name: "Dal (1 bowl)", cal: 180 },
+        { name: "Sandwich", cal: 250 },
+        { name: "Maggie Noodles (1 pack)", cal: 400 },
+        { name: "Orange (1 medium)", cal: 62 },
+        { name: "Yogurt (100g)", cal: 59 },
+        { name: "Peanut Butter (1 tbsp)", cal: 94 },
+        { name: "Almonds (10 pcs)", cal: 70 },
+        { name: "Fried Potato (100g)", cal: 312 },
+      ];
+
+      /***************
+       * DOM references & state
+       ***************/
+      const foodSelect = $("foodSelect");
+      const addFoodBtn = $("addFoodBtn");
+      const qtyInput = $("qty");
+      const foodListDiv = $("foodList");
+      const totalCalEl = $("totalCal");
+      const consumedValEl = $("consumedVal");
+      const remainingValEl = $("remainingVal");
+      const messagesEl = $("messages");
+
+      const ageEl = $("age");
+      const genderEl = $("gender");
+      const heightEl = $("height");
+      const weightEl = $("weight");
+      const activityEl = $("activity");
+      const computeBtn = $("computeBtn");
+      const resetProfileBtn = $("resetProfile");
+      const bmiValEl = $("bmiVal");
+      const bmiLabelEl = $("bmiLabel");
+      const bmrValEl = $("bmrVal");
+      const tdeeValEl = $("tdeeVal");
+
+      // Water elements
+      const glassesContainer = $("glasses");
+      const progressBar = $("progress-bar");
+      const waterStatus = $("waterStatus");
+      const addGlassBtn = $("addGlass");
+      const clearWaterBtn = $("clearWater");
+
+      // totals & state
+      let totalCalories = 0;
+      let consumedItems = []; // {id, name, cal, qty}
+      let recommendedCalories = null;
+
+      /***************
+       * Populate food dropdown
+       ***************/
+      function populateFoodDropdown() {
+        foodDB.forEach((f, idx) => {
+          const opt = document.createElement("option");
+          opt.value = idx; // index points to db entry
+          opt.textContent = `${f.name} — ${f.cal} kcal`;
+          foodSelect.appendChild(opt);
+        });
+      }
+      populateFoodDropdown();
+
+      /***************
+       * localStorage helpers (persist day data)
+       ***************/
+      const STORAGE_KEY = "fittrack_day_v1";
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (!saved) return;
+          // Only load if date is today to avoid mixing days
+          const today = new Date().toISOString().slice(0, 10);
+          if (saved.date !== today) {
+            // different day
+            return;
+          }
+          // load consumptions
+          consumedItems = saved.items || [];
+          totalCalories = saved.total || 0;
+          recommendedCalories = saved.recommended || recommendedCalories;
+          // water
+          if (Array.isArray(saved.water)) {
+            waterState = saved.water;
+          }
+        } catch (e) {
+          console.warn("load failed", e);
+        }
+      }
+
+      function saveState() {
+        const today = new Date().toISOString().slice(0, 10);
+        const payload = {
+          date: today,
+          items: consumedItems,
+          total: totalCalories,
+          recommended: recommendedCalories,
+          water: waterState,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      }
+
+      /***************
+       * Food list behavior
+       ***************/
+      function renderFoodList() {
+        foodListDiv.innerHTML = "";
+        consumedItems.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "food-item";
+          div.innerHTML = `<div>${item.name} x${item.qty}</div><div>${
+            item.cal * item.qty
+          } kcal <button data-id="${item.id}">❌</button></div>`;
+          const btn = div.querySelector("button");
+          btn.addEventListener("click", () => {
+            removeFoodItem(item.id);
+          });
+          foodListDiv.appendChild(div);
+        });
+        totalCalEl.textContent = fmt(totalCalories);
+        consumedValEl.textContent = fmt(totalCalories);
+        updateRemaining();
+      }
+
+      function addFoodFromDB() {
+        const sel = foodSelect.value;
+        const q = parseInt(qtyInput.value) || 1;
+        if (sel === "" || q <= 0) {
+          flashMessage("Select a valid food and quantity", "warn");
+          return;
+        }
+        const dbItem = foodDB[parseInt(sel)];
+        const id = Date.now() + Math.random().toString(36).slice(2, 6);
+        consumedItems.push({ id, name: dbItem.name, cal: dbItem.cal, qty: q });
+        totalCalories += dbItem.cal * q;
+        renderFoodList();
+        saveState();
+        flashMessage(`Added ${dbItem.name} ×${q}`, "ok");
+      }
+
+      function removeFoodItem(id) {
+        const idx = consumedItems.findIndex((x) => x.id === id);
+        if (idx === -1) return;
+        totalCalories -= consumedItems[idx].cal * consumedItems[idx].qty;
+        consumedItems.splice(idx, 1);
+        renderFoodList();
+        saveState();
+        flashMessage("Removed item", "ok");
+      }
+
+      function clearFood() {
+        consumedItems = [];
+        totalCalories = 0;
+        renderFoodList();
+        saveState();
+        flashMessage("Cleared food list for today", "ok");
+      }
+
+      addFoodBtn.addEventListener("click", addFoodFromDB);
+      $("clearFood").addEventListener("click", clearFood);
+
+      /***************
+       * BMI, BMR, TDEE computation
+       * Uses Mifflin-St Jeor formula for BMR:
+       *  Men:    BMR = 10*w + 6.25*h - 5*age + 5
+       *  Women:  BMR = 10*w + 6.25*h - 5*age - 161
+       * TDEE = BMR × activityFactor
+       * Then small BMI-based adjustment:
+       *  underweight: +300 kcal
+       *  normal: +0
+       *  overweight/obese: -300 kcal
+       ***************/
+      function computeProfile() {
+        const age = Number(ageEl.value);
+        const gender = genderEl.value;
+        const height = Number(heightEl.value); // cm
+        const weight = Number(weightEl.value); // kg
+        const activity = Number(activityEl.value);
+
+        if (!age || !height || !weight) {
+          flashMessage("Enter valid age, height and weight", "warn");
+          return;
+        }
+
+        // BMI
+        const bmi = weight / ((height / 100) * (height / 100));
+        let label = "";
+        if (bmi < 18.5) label = "Underweight";
+        else if (bmi < 25) label = "Normal";
+        else if (bmi < 30) label = "Overweight";
+        else label = "Obese";
+
+        // BMR
+        let bmr;
+        if (gender === "male") {
+          bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+        } else {
+          bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+        }
+        // TDEE
+        let tdee = bmr * activity;
+
+        // adjust by BMI
+        let adjust = 0;
+        if (bmi < 18.5) adjust = 300;
+        else if (bmi >= 25) adjust = -300;
+
+        const recommended = Math.round(tdee + adjust);
+
+        // update UI
+        bmiValEl.textContent = fmt(bmi);
+        bmiLabelEl.textContent = `${label}`;
+        bmrValEl.textContent = fmt(bmr);
+        tdeeValEl.textContent = fmt(recommended);
+
+        recommendedCalories = recommended;
+        saveState();
+        updateRemaining();
+        flashMessage("Profile computed — recommended calories set", "ok");
+      }
+
+      computeBtn.addEventListener("click", computeProfile);
+
+      /***************
+       * Remaining calorie / messages
+       ***************/
+      function updateRemaining() {
+        if (recommendedCalories == null) {
+          remainingValEl.textContent = "—";
+          return;
+        }
+        const remain = recommendedCalories - totalCalories;
+        remainingValEl.textContent = fmt(remain);
+        // message
+        if (remain >= 500) {
+          messagesEl.textContent =
+            "You still have calories left — consider healthy meals.";
+        } else if (remain >= 0) {
+          messagesEl.textContent =
+            "Close to your daily limit. Choose light meals.";
+        } else {
+          messagesEl.textContent =
+            "You exceeded the recommended calories for today — consider light activity.";
+        }
+      }
+
+      function flashMessage(msg, type) {
+        messagesEl.style.color =
+          type === "ok"
+            ? "var(--good)"
+            : type === "warn"
+            ? "var(--warn)"
+            : "var(--muted)";
+        messagesEl.textContent = msg;
+        setTimeout(() => {
+          messagesEl.style.color = "";
+          messagesEl.textContent = " ";
+        }, 4200);
+      }
+
+      /***************
+       * Water tracker (8 glasses)
+       ***************/
+      const totalGlasses = 8;
+      let waterState = Array(totalGlasses).fill(false); // boolean per glass
+
+      function renderGlasses() {
+        glassesContainer.innerHTML = "";
+        for (let i = 0; i < totalGlasses; i++) {
+          const g = document.createElement("div");
+          g.className = "glass";
+          if (waterState[i]) g.classList.add("full");
+          g.innerHTML = `<span>Glass ${i + 1}</span>`;
+          g.addEventListener("click", () => {
+            waterState[i] = !waterState[i];
+            renderGlasses();
+            saveState();
+          });
+          glassesContainer.appendChild(g);
+        }
+        updateWaterUI();
+      }
+
+      function updateWaterUI() {
+        const count = waterState.filter(Boolean).length;
+        const pct = (count / totalGlasses) * 100;
+        progressBar.style.width = pct + "%";
+        waterStatus.textContent = `${count} / ${totalGlasses}`;
+      }
+
+      addGlassBtn.addEventListener("click", () => {
+        const idx = waterState.indexOf(false);
+        if (idx === -1) {
+          flashMessage("All glasses already full", "warn");
+          return;
+        }
+        waterState[idx] = true;
+        renderGlasses();
+        saveState();
+      });
+
+      clearWaterBtn.addEventListener("click", () => {
+        waterState = Array(totalGlasses).fill(false);
+        renderGlasses();
+        saveState();
+        flashMessage("Water cleared", "ok");
+      });
+
+      /***************
+       * Reset Day button (clear todays entries but keep profile)
+       ***************/
+      resetProfileBtn.addEventListener("click", () => {
+        if (
+          !confirm(
+            "Reset today's water & food entries? This won't change your profile fields."
+          )
+        )
+          return;
+        consumedItems = [];
+        totalCalories = 0;
+        waterState = Array(totalGlasses).fill(false);
+        renderFoodList();
+        renderGlasses();
+        saveState();
+        flashMessage("Today's data reset", "ok");
+      });
+
+      /***************
+       * Initialization
+       ***************/
+      function init() {
+        // load previous state (if same day)
+        loadState();
+        // when loadState may have set waterState etc, but ensure defaults:
+        if (typeof waterState === "undefined")
+          waterState = Array(totalGlasses).fill(false);
+
+        // if saved recommended calories exist, show them
+        if (recommendedCalories !== null) {
+          tdeeValEl.textContent = fmt(recommendedCalories);
+        }
+
+        renderGlasses();
+        renderFoodList();
+        updateRemaining();
+      }
+
+      init();
+
+      // attempt to load any saved data immediately after init (in case compute hasn't been run)
+      // Note: if user changes profile and recomputes, recommendedCalories updates
+    </script>
+  </body>
+</html>
