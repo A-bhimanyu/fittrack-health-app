@@ -513,3 +513,25 @@ span {
     font-size: 50%;
   }
 }
+/* your existing CSS above */
+
+.footer{
+  text-align: center;
+  padding: 20px;
+}
+
+/* Mobile Responsive Code */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+  }
+
+  .home {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .home-img img {
+    width: 80%;
+  }
+}
